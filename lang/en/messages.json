@@ -1,0 +1,17 @@
+{
+    "noVoiceChannel": "You need to be in a voice channel to play music!",
+    "noPermissions": "I need the permissions to join and speak in your voice channel!",
+    "addedToQueue": "has been added to the queue!",
+    "nowPlaying": "Now playing:",
+    "noVoiceChannelSkip": "You have to be in a voice channel to skip the music!",
+    "noSongToSkip": "There is no song that I could skip!",
+    "noVoiceChannelStop": "You have to be in a voice channel to stop the music!",
+    "noSongToStop": "There is no song that I could stop!",
+    "noQueue": "There is no song in the queue!",
+    "currentQueue": "Current queue:",
+    "helpPlay": "!play [YouTube URL] - Plays a song from YouTube",
+    "helpSkip": "!skip - Skips the currently playing song",
+    "helpStop": "!stop - Stops the music and clears the queue",
+    "helpQueue": "!queue - Shows the current song queue",
+    "helpHelp": "!help - Shows this help message"
+}

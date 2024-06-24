@@ -10,6 +10,8 @@ const {
     generateDependencyReport
 } = require('@discordjs/voice');
 const sodium = require('libsodium-wrappers');
+const path = require('path');
+const fs = require('fs');
 
 console.log(generateDependencyReport());
 
@@ -24,7 +26,13 @@ const client = new Client({
 });
 
 const prefix = '>';
+const retryLimit = 3;
 const queue = new Map();
+
+// Load language files
+const lang = process.env.BOT_LANG || 'en';
+const messagesPath = path.join(__dirname, 'lang', lang, 'messages.json');
+const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
 
 client.once('ready', () => {
     console.log('Bot is online!');
@@ -46,16 +54,18 @@ client.on('messageCreate', async message => {
         stop(message, serverQueue);
     } else if (command === 'queue') {
         showQueue(message, serverQueue);
+    } else if (command === 'help') {
+        help(message);
     }
 });
 
 async function execute(message, serverQueue, args) {
     const voiceChannel = message.member.voice.channel;
-    if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
+    if (!voiceChannel) return message.channel.send(messages.noVoiceChannel);
 
     const permissions = voiceChannel.permissionsFor(message.client.user);
     if (!permissions.has(PermissionsBitField.Flags.Connect) || !permissions.has(PermissionsBitField.Flags.Speak)) {
-        return message.channel.send('I need the permissions to join and speak in your voice channel!');
+        return message.channel.send(messages.noPermissions);
     }
 
     const songInfo = await ytdl.getInfo(args[0]);
@@ -101,14 +111,14 @@ async function execute(message, serverQueue, args) {
         }
     } else {
         serverQueue.songs.push(song);
-        return message.channel.send(`${song.title} has been added to the queue!`);
+        return message.channel.send(`${song.title} ${messages.addedToQueue}`);
     }
 }
 
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-        serverQueue.connection.destroy(); // Correct way to leave the voice channel
+        serverQueue.connection.destroy();
         queue.delete(guild.id);
         return;
     }
@@ -117,7 +127,7 @@ function play(guild, song) {
     const resource = createAudioResource(stream);
 
     serverQueue.player.play(resource);
-    serverQueue.textChannel.send(`Now playing: ${song.title}`);
+    serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
 
     serverQueue.player.on(AudioPlayerStatus.Idle, () => {
         serverQueue.songs.shift();
@@ -132,14 +142,14 @@ function play(guild, song) {
 }
 
 function skip(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to skip the music!');
-    if (!serverQueue) return message.channel.send('There is no song that I could skip!');
+    if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelSkip);
+    if (!serverQueue) return message.channel.send(messages.noSongToSkip);
     serverQueue.player.stop();
 }
 
 function stop(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to stop the music!');
-    if (!serverQueue) return message.channel.send('There is no song that I could stop!');
+    if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelStop);
+    if (!serverQueue) return message.channel.send(messages.noSongToStop);
 
     serverQueue.songs = [];
     serverQueue.player.stop();
@@ -148,9 +158,20 @@ function stop(message, serverQueue) {
 }
 
 function showQueue(message, serverQueue) {
-    if (!serverQueue) return message.channel.send('There is no song in the queue!');
+    if (!serverQueue) return message.channel.send(messages.noQueue);
     const queueMessage = serverQueue.songs.map((song, index) => `${index + 1}. ${song.title}`).join('\n');
-    return message.channel.send(`Current queue:\n${queueMessage}`);
+    return message.channel.send(`${messages.currentQueue}\n${queueMessage}`);
+}
+
+function help(message) {
+    const helpMessage = `
+${messages.helpPlay}
+${messages.helpSkip}
+${messages.helpStop}
+${messages.helpQueue}
+${messages.helpHelp}
+    `;
+    return message.channel.send(helpMessage);
 }
 
 client.login(process.env.DISCORD_TOKEN);

@@ -1,0 +1,17 @@
+{
+    "noVoiceChannel": "¡Necesitas estar en un canal de voz para reproducir música!",
+    "noPermissions": "¡Necesito permisos para unirme y hablar en tu canal de voz!",
+    "addedToQueue": "ha sido añadido a la cola!",
+    "nowPlaying": "Reproduciendo ahora:",
+    "noVoiceChannelSkip": "¡Tienes que estar en un canal de voz para saltar la canción!",
+    "noSongToSkip": "¡No hay ninguna canción que pueda saltar!",
+    "noVoiceChannelStop": "¡Tienes que estar en un canal de voz para detener la música!",
+    "noSongToStop": "¡No hay ninguna canción que pueda detener!",
+    "noQueue": "¡No hay ninguna canción en la cola!",
+    "currentQueue": "Cola actual:",
+    "helpPlay": ">play [URL de YouTube] - Reproduce una canción de YouTube",
+    "helpSkip": ">skip - Salta la canción que se está reproduciendo",
+    "helpStop": ">stop - Detiene la música y limpia la cola",
+    "helpQueue": ">queue - Muestra la cola de canciones actual",
+    "helpHelp": ">help - Muestra este mensaje de ayuda"
+}
