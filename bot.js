@@ -45,6 +45,8 @@ client.on('messageCreate', async message => {
         skip(message, serverQueue);
     } else if (command === 'stop') {
         stop(message, serverQueue);
+    } else if (command === 'queue') {
+        showQueue(message, serverQueue);
     }
 });
 
@@ -107,7 +109,7 @@ async function execute(message, serverQueue, args) {
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-        serverQueue.voiceChannel.leave();
+        serverQueue.connection.destroy(); // Correct way to leave the voice channel
         queue.delete(guild.id);
         return;
     }
@@ -131,7 +133,7 @@ function play(guild, song) {
 }
 
 function skip(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to stop the music!');
+    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to skip the music!');
     if (!serverQueue) return message.channel.send('There is no song that I could skip!');
     serverQueue.player.stop();
 }
@@ -146,5 +148,10 @@ function stop(message, serverQueue) {
     queue.delete(message.guild.id);
 }
 
-client.login(process.env.DISCORD_TOKEN);
+function showQueue(message, serverQueue) {
+    if (!serverQueue) return message.channel.send('There is no song in the queue!');
+    const queueMessage = serverQueue.songs.map((song, index) => `${index + 1}. ${song.title}`).join('\n');
+    return message.channel.send(`Current queue:\n${queueMessage}`);
+}
 
+client.login(process.env.DISCORD_TOKEN);
