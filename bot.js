@@ -23,8 +23,7 @@ const client = new Client({
     partials: [Partials.Channel]
 });
 
-const prefix = '!';
-const retryLimit = 3;
+const prefix = '>';
 const queue = new Map();
 
 client.once('ready', () => {
