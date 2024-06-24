@@ -9,9 +9,9 @@
     "noSongToStop": "There is no song that I could stop!",
     "noQueue": "There is no song in the queue!",
     "currentQueue": "Current queue:",
-    "helpPlay": "!play [YouTube URL] - Plays a song from YouTube",
-    "helpSkip": "!skip - Skips the currently playing song",
-    "helpStop": "!stop - Stops the music and clears the queue",
-    "helpQueue": "!queue - Shows the current song queue",
-    "helpHelp": "!help - Shows this help message"
+    "helpPlay": ">play [YouTube URL] - Plays a song from YouTube",
+    "helpSkip": ">skip - Skips the currently playing song",
+    "helpStop": ">stop - Stops the music and clears the queue",
+    "helpQueue": ">queue - Shows the current song queue",
+    "helpHelp": ">help - Shows this help message"
 }
