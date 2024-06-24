@@ -147,3 +147,4 @@ function stop(message, serverQueue) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
