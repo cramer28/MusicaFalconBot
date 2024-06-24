@@ -47,15 +47,27 @@ client.on('messageCreate', async message => {
     const serverQueue = queue.get(message.guild.id);
 
     if (command === 'play') {
-        execute(message, serverQueue, args);
+        await execute(message, serverQueue, args);
     } else if (command === 'skip') {
-        skip(message, serverQueue);
+        await skip(message, serverQueue);
     } else if (command === 'stop') {
-        stop(message, serverQueue);
+        await stop(message, serverQueue);
     } else if (command === 'queue') {
-        showQueue(message, serverQueue);
+        await showQueue(message, serverQueue);
     } else if (command === 'help') {
-        help(message);
+        await help(message);
+    }
+
+    // Check and delete the user's message
+    try {
+        if (message.guild && message.guild.me && message.guild.me.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+            await message.delete();
+        } else {
+            message.channel.send(messages.noManageMessagesPermission);
+        }
+    } catch (error) {
+        console.error(`Could not delete message: ${error}`);
+        message.channel.send(messages.deleteError);
     }
 });
 
@@ -141,13 +153,13 @@ function play(guild, song) {
     });
 }
 
-function skip(message, serverQueue) {
+async function skip(message, serverQueue) {
     if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelSkip);
     if (!serverQueue) return message.channel.send(messages.noSongToSkip);
     serverQueue.player.stop();
 }
 
-function stop(message, serverQueue) {
+async function stop(message, serverQueue) {
     if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelStop);
     if (!serverQueue) return message.channel.send(messages.noSongToStop);
 
@@ -157,13 +169,13 @@ function stop(message, serverQueue) {
     queue.delete(message.guild.id);
 }
 
-function showQueue(message, serverQueue) {
+async function showQueue(message, serverQueue) {
     if (!serverQueue) return message.channel.send(messages.noQueue);
     const queueMessage = serverQueue.songs.map((song, index) => `${index + 1}. ${song.title}`).join('\n');
     return message.channel.send(`${messages.currentQueue}\n${queueMessage}`);
 }
 
-function help(message) {
+async function help(message) {
     const helpMessage = `
 ${messages.helpPlay}
 ${messages.helpSkip}

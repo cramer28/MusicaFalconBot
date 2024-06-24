@@ -13,5 +13,7 @@
     "helpSkip": ">skip - Salta la canción que se está reproduciendo",
     "helpStop": ">stop - Detiene la música y limpia la cola",
     "helpQueue": ">queue - Muestra la cola de canciones actual",
-    "helpHelp": ">help - Muestra este mensaje de ayuda"
+    "helpHelp": ">help - Muestra este mensaje de ayuda",
+    "noManageMessagesPermission": "No tengo los permisos para administrar mensajes!",
+    "deleteError": "Hubo un error intentando borrar el mensaje!"
 }
