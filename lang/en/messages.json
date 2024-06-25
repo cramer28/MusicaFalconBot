@@ -16,7 +16,7 @@
     "noSongToStop": "There is no song that I could stop!",
     "noQueue": "There are no songs in the queue!",
     "currentQueue": "Current queue:",
-    "helpPlay": "Type !play <URL> to play a song",
+    "helpPlay": "Type !play <URL> to play a song or type a search query and choose from a list of results",
     "helpSkip": "Type !skip to skip the current song",
     "helpStop": "Type !stop to stop the music",
     "helpQueue": "Type !queue to see the current queue",

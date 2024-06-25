@@ -16,7 +16,7 @@
     "noSongToStop": "¡No hay ninguna canción que pueda detener!",
     "noQueue": "¡No hay ninguna canción en la cola!",
     "currentQueue": "Cola actual:",
-    "helpPlay": ">play [URL de YouTube] - Reproduce una canción de YouTube",
+    "helpPlay": ">play [URL de YouTube] o nombre - Reproduce una canción de YouTube ya sea con un link o ingresando un nombre y eligiendo de una lista de resultados",
     "helpSkip": ">skip - Salta la canción que se está reproduciendo",
     "helpStop": ">stop - Detiene la música y limpia la cola",
     "helpQueue": ">queue - Muestra la cola de canciones actual",
