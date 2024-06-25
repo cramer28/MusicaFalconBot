@@ -15,6 +15,7 @@
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
     "ffmpeg-static": "^5.2.0",
+    "googleapis": "^140.0.0",
     "libsodium-wrappers": "^0.7.13",
     "web-streams-polyfill": "^4.0.0",
     "ytdl-core": "^4.11.5"
