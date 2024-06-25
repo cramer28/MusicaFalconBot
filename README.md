@@ -63,4 +63,4 @@ Feel free to fork this repository and contribute by submitting a pull request.
 
 ## License
 
-MIT License in progress.
+This project is licensed under the MIT License.

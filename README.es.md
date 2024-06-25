@@ -63,4 +63,4 @@ Siéntete libre de bifurcar este repositorio y contribuir enviando una solicitud
 
 ## Licencia
 
-Licencia MIT en progreso.
+Este proyecto está licenciado bajo la Licencia MIT.
