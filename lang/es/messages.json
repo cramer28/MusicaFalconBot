@@ -1,6 +1,8 @@
 {
     "noVoiceChannel": "¡Necesitas estar en un canal de voz para reproducir música!",
     "noPermissions": "¡Necesito permisos para unirme y hablar en tu canal de voz!",
+    "noArgs": "Necesitas ingresar un link de Youtube!",
+    "infoError": "Ocurrio un error recuperando la informacion del video, asegurate de haber ingresado el link correctamente.",
     "addedToQueue": "ha sido añadido a la cola!",
     "nowPlaying": "Reproduciendo ahora:",
     "noVoiceChannelSkip": "¡Tienes que estar en un canal de voz para saltar la canción!",

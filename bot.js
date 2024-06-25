@@ -9,7 +9,6 @@ const {
     VoiceConnectionStatus,
     generateDependencyReport
 } = require('@discordjs/voice');
-const sodium = require('libsodium-wrappers');
 const path = require('path');
 const fs = require('fs');
 
@@ -26,7 +25,6 @@ const client = new Client({
 });
 
 const prefix = '>';
-const retryLimit = 3;
 const queue = new Map();
 
 // Load language files
@@ -58,73 +56,70 @@ client.on('messageCreate', async message => {
         await help(message);
     }
 
-    // Check and delete the user's message
-    try {
-        if (message.guild && message.guild.me && message.guild.me.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            await message.delete();
-        } else {
-            message.channel.send(messages.noManageMessagesPermission);
-        }
-    } catch (error) {
-        console.error(`Could not delete message: ${error}`);
-        message.channel.send(messages.deleteError);
-    }
 });
 
 async function execute(message, serverQueue, args) {
     const voiceChannel = message.member.voice.channel;
     if (!voiceChannel) return message.channel.send(messages.noVoiceChannel);
+    if (!args[0]) return message.channel.send(messages.noArgs);
 
     const permissions = voiceChannel.permissionsFor(message.client.user);
     if (!permissions.has(PermissionsBitField.Flags.Connect) || !permissions.has(PermissionsBitField.Flags.Speak)) {
         return message.channel.send(messages.noPermissions);
     }
 
-    const songInfo = await ytdl.getInfo(args[0]);
-    const song = {
-        title: songInfo.videoDetails.title,
-        url: songInfo.videoDetails.video_url
-    };
-
-    if (!serverQueue) {
-        const queueContruct = {
-            textChannel: message.channel,
-            voiceChannel: voiceChannel,
-            connection: null,
-            songs: [],
-            volume: 5,
-            playing: true,
-            player: createAudioPlayer()
+    try {
+        
+        const songInfo = await ytdl.getInfo(args[0]);
+        const song = {
+            title: songInfo.videoDetails.title,
+            url: songInfo.videoDetails.video_url
         };
 
-        queue.set(message.guild.id, queueContruct);
-        queueContruct.songs.push(song);
+        if (!serverQueue) {
+            const queueContruct = {
+                textChannel: message.channel,
+                voiceChannel: voiceChannel,
+                connection: null,
+                songs: [],
+                volume: 5,
+                playing: true,
+                player: createAudioPlayer()
+            };
 
-        try {
-            const connection = joinVoiceChannel({
-                channelId: voiceChannel.id,
-                guildId: voiceChannel.guild.id,
-                adapterCreator: voiceChannel.guild.voiceAdapterCreator
-            });
+            queue.set(message.guild.id, queueContruct);
+            queueContruct.songs.push(song);
 
-            queueContruct.connection = connection;
-            play(message.guild, queueContruct.songs[0]);
+            try {
+                const connection = joinVoiceChannel({
+                    channelId: voiceChannel.id,
+                    guildId: voiceChannel.guild.id,
+                    adapterCreator: voiceChannel.guild.voiceAdapterCreator
+                });
 
-            connection.subscribe(queueContruct.player);
+                queueContruct.connection = connection;
+                play(message.guild, queueContruct.songs[0]);
 
-            connection.on(VoiceConnectionStatus.Disconnected, () => {
+                connection.subscribe(queueContruct.player);
+
+                connection.on(VoiceConnectionStatus.Disconnected, () => {
+                    queue.delete(message.guild.id);
+                });
+
+            } catch (err) {
+                console.log(err);
                 queue.delete(message.guild.id);
-            });
-
-        } catch (err) {
-            console.log(err);
-            queue.delete(message.guild.id);
-            return message.channel.send(err);
+                return message.channel.send(err);
+            }
+        } else {
+            serverQueue.songs.push(song);
+            return message.channel.send(`${song.title} ${messages.addedToQueue}`);
         }
-    } else {
-        serverQueue.songs.push(song);
-        return message.channel.send(`${song.title} ${messages.addedToQueue}`);
+
+    } catch (error) {
+        return message.channel.send(messages.infoError);
     }
+    
 }
 
 function play(guild, song) {

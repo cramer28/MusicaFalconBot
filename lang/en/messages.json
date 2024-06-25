@@ -1,6 +1,8 @@
 {
     "noVoiceChannel": "You need to be in a voice channel to play music!",
     "noPermissions": "I need the permissions to join and speak in your voice channel!",
+    "noArgs": "You need to provide a YouTube URL!",
+    "infoError": "Error fetching video info. Make sure the URL is correct.",
     "addedToQueue": "has been added to the queue!",
     "nowPlaying": "Now playing:",
     "noVoiceChannelSkip": "You have to be in a voice channel to stop the music!",
