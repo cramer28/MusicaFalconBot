@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, PermissionsBitField } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, PermissionsBitField, ActivityType } = require('discord.js');
 const ytdl = require('ytdl-core');
 const {
     joinVoiceChannel,
@@ -42,6 +42,7 @@ const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
 
 client.once('ready', () => {
     console.log('Bot is online!');
+    client.user.setActivity('>help', { type: ActivityType.Listening });
 });
 
 client.on('messageCreate', async message => {
@@ -197,6 +198,8 @@ function handleSong(message, serverQueue, song) {
     }
 }
 
+//#region Comandos
+
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
@@ -255,5 +258,7 @@ ${messages.helpHelp}
     `;
     return message.channel.send(helpMessage);
 }
+
+//#endregion
 
 client.login(process.env.DISCORD_TOKEN);
