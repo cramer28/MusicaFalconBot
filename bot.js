@@ -205,6 +205,7 @@ function play(guild, song) {
     if (!song) {
         serverQueue.connection.destroy();
         queue.delete(guild.id);
+        client.user.setActivity('>help', { type: ActivityType.Listening });
         return;
     }
 
@@ -213,6 +214,7 @@ function play(guild, song) {
 
     serverQueue.player.play(resource);
     serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
+    client.user.setActivity(`${song.title}`, { type: ActivityType.Playing });
 
     serverQueue.player.on(AudioPlayerStatus.Idle, () => {
         serverQueue.songs.shift();
@@ -240,6 +242,7 @@ async function stop(message, serverQueue) {
     serverQueue.player.stop();
     serverQueue.connection.destroy();
     queue.delete(message.guild.id);
+    client.user.setActivity('>help', { type: ActivityType.Listening });
 }
 
 async function showQueue(message, serverQueue) {
