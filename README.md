@@ -9,6 +9,7 @@ A simple Discord music bot that plays music from YouTube.
 - Skip the current song
 - Stop the music and clear the queue
 - Show the current queue
+- Autoplay to keep the music going
 - Help command to list all available commands
 
 ## Commands
@@ -16,17 +17,18 @@ A simple Discord music bot that plays music from YouTube.
 - `>skip` - Skip the current song.
 - `>stop` - Stop the music and clear the queue.
 - `>queue` - Show the current queue.
+- `>autoplay` - Keep playing songs related to the last played.
 - `>help` - Show help message.
 
 ## Setup
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-username/discord-music-bot.git
-    cd discord-music-bot
+    git clone https://github.com/cramer28/MusicaFalconBot.git
+    cd MusicaFalconBot
     ```
 
-2. Install dependencies:
+2. Install dependencies: (you need to have Node.js preinstalled, preferedly ver.18 or higher)
     ```sh
     npm install
     ```
@@ -34,6 +36,7 @@ A simple Discord music bot that plays music from YouTube.
 3. Create a `.env` file in the root directory and add your Discord bot token:
     ```env
     DISCORD_TOKEN=your-discord-bot-token
+    YOUTUBE_API_KEY=your-google/youtube-api-key
     BOT_LANG=en
     ```
 
@@ -51,7 +54,6 @@ The bot supports multiple languages. To add a new language, create a new JSON fi
 Ensure the bot has the following permissions:
 - Connect
 - Speak
-- Manage Messages (for deleting user commands)
 
 ## Hosting
 

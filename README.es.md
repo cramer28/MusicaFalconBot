@@ -9,6 +9,7 @@ Un simple bot de música para Discord que reproduce música desde YouTube.
 - Salta la canción actual
 - Detiene la música y borra la cola
 - Muestra la cola actual
+- Mantiene la música sonando con la función de Autoplay
 - Comando de ayuda para listar todos los comandos disponibles
 
 ## Comandos
@@ -16,17 +17,18 @@ Un simple bot de música para Discord que reproduce música desde YouTube.
 - `>skip` - Salta la canción actual.
 - `>stop` - Detiene la música y borra la cola.
 - `>queue` - Muestra la cola actual.
+- `>autoplay` - Activa/Desactiva la funcion de Autoplay para reproducir canciones relacionadas.
 - `>help` - Muestra el mensaje de ayuda.
 
 ## Configuración
 
 1. Clona el repositorio:
     ```sh
-    git clone https://github.com/your-username/discord-music-bot.git
-    cd discord-music-bot
+    git clone https://github.com/cramer28/MusicaFalconBot.git
+    cd MusicaFalconBot
     ```
 
-2. Instala las dependencias:
+2. Instala las dependencias: (necesitas tener Node.js preinstalado, preferiblemente ver.18 o mas nueva)
     ```sh
     npm install
     ```
@@ -34,6 +36,7 @@ Un simple bot de música para Discord que reproduce música desde YouTube.
 3. Crea un archivo `.env` en el directorio raíz y agrega el token de tu bot de Discord:
     ```env
     DISCORD_TOKEN=tu-token-de-discord
+    YOUTUBE_API_KEY=tu-token-de-google/youtube
     BOT_LANG=es
     ```
 
@@ -51,7 +54,6 @@ El bot soporta múltiples idiomas. Para agregar un nuevo idioma, crea un nuevo a
 Asegúrate de que el bot tenga los siguientes permisos:
 - Conectar
 - Hablar
-- Gestionar Mensajes (para borrar los comandos de usuario)
 
 ## Alojamiento
 
