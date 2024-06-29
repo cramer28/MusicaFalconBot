@@ -43,7 +43,6 @@ const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
 client.once('ready', () => {
     console.log('Bot is online!');
     client.user.setActivity('>help', { type: ActivityType.Listening });
-    //client.setMaxListeners(20);
 });
 
 client.on('messageCreate', async message => {
@@ -149,6 +148,7 @@ async function execute(message, serverQueue, args) {
                 if (collected.size === 0) {
                     message.channel.send(messages.searchNoSelection);
                 }
+                collector.removeAllListeners();
             });
 
             return;
@@ -211,6 +211,7 @@ const handlePlaylist = async (message, playlistUrl) => {
 
         const filter = m => m.author.id === message.author.id && ['1', '2'].includes(m.content);
         const collector = message.channel.createMessageCollector({ filter, time: 15000 });
+        activeCollectors.set(message.author.id, collector);
 
         collector.on('collect', m => {
             if (m.content === '1') {
@@ -221,12 +222,15 @@ const handlePlaylist = async (message, playlistUrl) => {
                 videos.forEach(video => handleSong(message, queue.get(message.guild.id), video, false));
             }
             collector.stop();
+            activeCollectors.delete(message.author.id);
         });
 
         collector.on('end', collected => {
+            activeCollectors.delete(message.author.id);
             if (collected.size === 0) {
                 message.channel.send(messages.searchNoSelection);
             }
+            collector.removeAllListeners();
         });
 
         return;
@@ -268,6 +272,8 @@ function handleSong(message, serverQueue, song, sendMessage = true) {
             connection.subscribe(queueContruct.player);
 
             connection.on(VoiceConnectionStatus.Disconnected, () => {
+                queueContruct.player.removeAllListeners(AudioPlayerStatus.Idle);
+                queueContruct.player.removeAllListeners('error');
                 queue.delete(message.guild.id);
             });
 
@@ -286,7 +292,7 @@ function handleSong(message, serverQueue, song, sendMessage = true) {
 
 //#region Comandos
 
-function play(guild, song) {
+async function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
         serverQueue.connection.destroy();
@@ -299,10 +305,12 @@ function play(guild, song) {
     const resource = createAudioResource(stream);
 
     serverQueue.player.play(resource);
+    serverQueue.connection.subscribe(serverQueue.player);
+
     serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
     client.user.setActivity(`${song.title}`, { type: ActivityType.Playing });
 
-    serverQueue.player.on(AudioPlayerStatus.Idle, async () => {
+    const idleListener = async () => {
         serverQueue.songs.shift();
         if (serverQueue.autoplay && !serverQueue.songs.length) {
             try {
@@ -315,19 +323,25 @@ function play(guild, song) {
                     });
                 }
             } catch (error) {
-            console.error('Error fetching related song for autoplay:', error);
+                console.error('Error fetching related song for autoplay:', error);
             }
         }
-        
         play(guild, serverQueue.songs[0]);
-    });
+    };
 
-    serverQueue.player.on('error', error => {
+    const errorListener = error => {
         console.error('Audio Player Error:', error);
         serverQueue.songs.shift();
         play(guild, serverQueue.songs[0]);
-    });
-    
+    };
+
+    // Remove previous listeners to avoid memory leaks
+    serverQueue.player.removeAllListeners(AudioPlayerStatus.Idle);
+    serverQueue.player.removeAllListeners('error');
+
+    // Add the new listeners
+    serverQueue.player.on(AudioPlayerStatus.Idle, idleListener);
+    serverQueue.player.on('error', errorListener);
 }
 
 async function skip(message, serverQueue) {
