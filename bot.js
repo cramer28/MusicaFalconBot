@@ -1,6 +1,11 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Partials, PermissionsBitField, ActivityType } = require('discord.js');
 const ytdl = require('ytdl-core');
+const { google } = require('googleapis');
+const youtube = google.youtube({
+    version: 'v3',
+    auth: process.env.YOUTUBE_API_KEY // Your YouTube Data API key
+});
 const {
     joinVoiceChannel,
     createAudioPlayer,
@@ -10,7 +15,7 @@ const {
     generateDependencyReport
 } = require('@discordjs/voice');
 
-const { google } = require('googleapis');
+
 const path = require('path');
 const fs = require('fs');
 
@@ -30,11 +35,6 @@ const prefix = '>';
 const queue = new Map();
 const activeCollectors = new Map(); // To track active message collectors
 
-const youtube = google.youtube({
-    version: 'v3',
-    auth: process.env.YOUTUBE_API_KEY // Your YouTube Data API key
-});
-
 // Load language files
 const lang = process.env.BOT_LANG || 'en';
 const messagesPath = path.join(__dirname, 'lang', lang, 'messages.json');
@@ -43,6 +43,7 @@ const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
 client.once('ready', () => {
     console.log('Bot is online!');
     client.user.setActivity('>help', { type: ActivityType.Listening });
+    //client.setMaxListeners(20);
 });
 
 client.on('messageCreate', async message => {
@@ -64,9 +65,11 @@ client.on('messageCreate', async message => {
     } else if (command === 'stop') {
         stop(message, serverQueue);
     } else if (command === 'queue') {
-        showQueue(message, serverQueue);
+        displayQueue(message, serverQueue);
     } else if (command === 'help') {
         help(message);
+    } else if (command === 'autoplay') {
+        toggleAutoplay(message, serverQueue);
     }
 
 });
@@ -85,15 +88,20 @@ async function execute(message, serverQueue, args) {
     let song;
 
     if (ytdl.validateURL(args[0])) {
-        try {
-            songInfo = await ytdl.getInfo(args[0]);
-            song = {
-                title: songInfo.videoDetails.title,
-                url: songInfo.videoDetails.video_url
-            };
-        } catch (error) {
-            console.error('Error getting video info:', error);
-            return message.channel.send(messages.infoError);
+        const url = args[0];
+        if (url.includes('list=')) {
+            return handlePlaylist(message, url);
+        } else {
+            try {
+                songInfo = await ytdl.getInfo(args[0]);
+                song = {
+                    title: songInfo.videoDetails.title,
+                    url: songInfo.videoDetails.video_url
+                };
+            } catch (error) {
+                console.error('Error getting video info:', error);
+                return message.channel.send(messages.infoError);
+            }
         }
     } else {
         try {
@@ -154,7 +162,82 @@ async function execute(message, serverQueue, args) {
 
 }
 
-function handleSong(message, serverQueue, song) {
+const handlePlaylist = async (message, playlistUrl) => {
+    // Extract the initial video ID and the playlist ID from the URL
+    const initialVideoId = playlistUrl.split('v=')[1].split('&')[0];
+    const playlistId = playlistUrl.split('list=')[1];
+
+    // Function to get video details
+    const getVideoDetails = async (videoId) => {
+        try {
+            const videoInfo = await youtube.videos.list({
+                part: 'snippet',
+                id: videoId
+            });
+            const video = videoInfo.data.items[0];
+            return {
+                title: video.snippet.title,
+                url: `https://www.youtube.com/watch?v=${videoId}`
+            };
+        } catch (error) {
+            console.error('Error fetching video details:', error);
+            throw error;
+        }
+    };
+
+    // Add the initial video to the queue
+    const initialVideo = await getVideoDetails(initialVideoId);
+    message.channel.send(`${initialVideo.title} ${messages.addedToQueue}`);
+    handleSong(message, queue.get(message.guild.id), initialVideo, true);
+
+    // Fetch the rest of the playlist
+    try {
+        const playlistResponse = await youtube.playlistItems.list({
+            part: 'snippet',
+            playlistId: playlistId,
+            maxResults: 50
+        });
+
+        const videos = playlistResponse.data.items.map(item => ({
+            title: item.snippet.title,
+            url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`
+        }));
+
+        if (videos.length === 0) {
+            return message.channel.send(messages.playlistEmpty);
+        }
+
+        message.channel.send(messages.playlistQuestion);
+
+        const filter = m => m.author.id === message.author.id && ['1', '2'].includes(m.content);
+        const collector = message.channel.createMessageCollector({ filter, time: 15000 });
+
+        collector.on('collect', m => {
+            if (m.content === '1') {
+                // If the user chose to add the first song, it's already added
+                message.channel.send(messages.playlistFirstAdd);
+            } else if (m.content === '2') {
+                message.channel.send(`${videos.length} ${messages.multiQueueAdd}`);
+                videos.forEach(video => handleSong(message, queue.get(message.guild.id), video, false));
+            }
+            collector.stop();
+        });
+
+        collector.on('end', collected => {
+            if (collected.size === 0) {
+                message.channel.send(messages.searchNoSelection);
+            }
+        });
+
+        return;
+    } catch (error) {
+        console.error('Error fetching playlist:', error);
+        return message.channel.send(messages.playlistError);
+    }
+};
+
+
+function handleSong(message, serverQueue, song, sendMessage = true) {
     const voiceChannel = message.member.voice.channel;
 
     if (!serverQueue) {
@@ -165,6 +248,7 @@ function handleSong(message, serverQueue, song) {
             songs: [],
             volume: 5,
             playing: true,
+            autoplay: false,
             player: createAudioPlayer()
         };
 
@@ -194,7 +278,9 @@ function handleSong(message, serverQueue, song) {
         }
     } else {
         serverQueue.songs.push(song);
-        return message.channel.send(`${song.title} ${messages.addedToQueue}`);
+        if (sendMessage) {
+            return message.channel.send(`${song.title} ${messages.addedToQueue}`);
+        }
     }
 }
 
@@ -216,22 +302,57 @@ function play(guild, song) {
     serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
     client.user.setActivity(`${song.title}`, { type: ActivityType.Playing });
 
-    serverQueue.player.on(AudioPlayerStatus.Idle, () => {
+    serverQueue.player.on(AudioPlayerStatus.Idle, async () => {
         serverQueue.songs.shift();
+        if (serverQueue.autoplay && !serverQueue.songs.length) {
+            try {
+                const relatedSongs = await ytdl.getInfo(song.url);
+                const relatedSong = relatedSongs.related_videos.find(video => video.length_seconds > 0);
+                if (relatedSong) {
+                    serverQueue.songs.push({
+                        title: relatedSong.title,
+                        url: `https://www.youtube.com/watch?v=${relatedSong.id}`
+                    });
+                }
+            } catch (error) {
+            console.error('Error fetching related song for autoplay:', error);
+            }
+        }
+        
         play(guild, serverQueue.songs[0]);
     });
 
     serverQueue.player.on('error', error => {
-        console.error(error);
+        console.error('Audio Player Error:', error);
         serverQueue.songs.shift();
         play(guild, serverQueue.songs[0]);
     });
+    
 }
 
 async function skip(message, serverQueue) {
     if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelSkip);
     if (!serverQueue) return message.channel.send(messages.noSongToSkip);
+
+    const currentSong = serverQueue.songs.shift();
+    if (serverQueue.autoplay && !serverQueue.songs.length) {
+        try {
+            const relatedSongs = await ytdl.getInfo(currentSong.url);
+            const relatedSong = relatedSongs.related_videos.find(video => video.length_seconds > 0);
+            if (relatedSong) {
+                serverQueue.songs.push({
+                    title: relatedSong.title,
+                    url: `https://www.youtube.com/watch?v=${relatedSong.id}`
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching related song for autoplay:', error);
+        }
+    }
+
     serverQueue.player.stop();
+    play(message.guild, serverQueue.songs[0]);
+
 }
 
 async function stop(message, serverQueue) {
@@ -245,11 +366,28 @@ async function stop(message, serverQueue) {
     client.user.setActivity('>help', { type: ActivityType.Listening });
 }
 
-async function showQueue(message, serverQueue) {
-    if (!serverQueue) return message.channel.send(messages.noQueue);
-    const queueMessage = serverQueue.songs.map((song, index) => `${index + 1}. ${song.title}`).join('\n');
-    return message.channel.send(`${messages.currentQueue}\n${queueMessage}`);
-}
+const displayQueue = (message, serverQueue) => {
+    if (!serverQueue || !serverQueue.songs.length) {
+        return message.channel.send(messages.noQueue);
+    }
+
+    let queueMessage = messages.currentQueue;
+    const maxDisplay = 10; // Limit to show only the first 10 songs
+    serverQueue.songs.slice(0, maxDisplay).forEach((song, index) => {
+        queueMessage += `${index + 1}. ${song.title}\n`;
+    });
+
+    if (serverQueue.songs.length > maxDisplay) {
+        queueMessage += `... ${serverQueue.songs.length - maxDisplay} ${messages.leftInQueue}`;
+    }
+
+    // Split the queueMessage into chunks of 2000 characters
+    const chunkSize = 2000;
+    for (let i = 0; i < queueMessage.length; i += chunkSize) {
+        const chunk = queueMessage.substring(i, i + chunkSize);
+        message.channel.send(chunk);
+    }
+};
 
 async function help(message) {
     const helpMessage = `
@@ -257,9 +395,16 @@ ${messages.helpPlay}
 ${messages.helpSkip}
 ${messages.helpStop}
 ${messages.helpQueue}
+${messages.helpAutoplay}
 ${messages.helpHelp}
     `;
     return message.channel.send(helpMessage);
+}
+
+function toggleAutoplay(message, serverQueue) {
+    if (!serverQueue) return message.channel.send(messages.noQueue);
+    serverQueue.autoplay = !serverQueue.autoplay;
+    message.channel.send(serverQueue.autoplay ? messages.autoEnabled : messages.autoDisabled);
 }
 
 //#endregion
