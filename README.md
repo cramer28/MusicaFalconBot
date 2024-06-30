@@ -28,7 +28,7 @@ A simple Discord music bot that plays music from YouTube.
     cd MusicaFalconBot
     ```
 
-2. Install dependencies: (you need to have Node.js preinstalled, preferedly ver.18 or higher)
+2. Install dependencies: (you need to have Node.js preinstalled, preferably ver.18 or newer)
     ```sh
     npm install
     ```
