@@ -292,7 +292,7 @@ function handleSong(message, serverQueue, song, sendMessage = true) {
 
 //#region Comandos
 
-async function play(guild, song) {
+async function play(guild, song, retries = 3) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
         serverQueue.connection.destroy();
@@ -301,47 +301,68 @@ async function play(guild, song) {
         return;
     }
 
-    const stream = ytdl(song.url, { filter: 'audioonly' });
-    const resource = createAudioResource(stream);
-
-    serverQueue.player.play(resource);
-    serverQueue.connection.subscribe(serverQueue.player);
-
-    serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
-    client.user.setActivity(`${song.title}`, { type: ActivityType.Playing });
-
-    const idleListener = async () => {
-        serverQueue.songs.shift();
-        if (serverQueue.autoplay && !serverQueue.songs.length) {
-            try {
-                const relatedSongs = await ytdl.getInfo(song.url);
-                const relatedSong = relatedSongs.related_videos.find(video => video.length_seconds > 0);
-                if (relatedSong) {
-                    serverQueue.songs.push({
-                        title: relatedSong.title,
-                        url: `https://www.youtube.com/watch?v=${relatedSong.id}`
-                    });
+    try {
+        const stream = ytdl(song.url, { filter: 'audioonly' , quality: 'lowestaudio'});
+        const resource = createAudioResource(stream);
+    
+        await serverQueue.player.play(resource);
+        serverQueue.connection.subscribe(serverQueue.player);
+    
+        serverQueue.textChannel.send(`${messages.nowPlaying} ${song.title}`);
+        client.user.setActivity(`${song.title}`, { type: ActivityType.Playing });
+    
+        const idleListener = async () => {
+            serverQueue.songs.shift();
+            if (serverQueue.autoplay && !serverQueue.songs.length) {
+                try {
+                    const relatedSongs = await ytdl.getInfo(song.url);
+                    const relatedSong = relatedSongs.related_videos.find(video => video.length_seconds > 0);
+                    if (relatedSong) {
+                        serverQueue.songs.push({
+                            title: relatedSong.title,
+                            url: `https://www.youtube.com/watch?v=${relatedSong.id}`
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error fetching related song for autoplay:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching related song for autoplay:', error);
             }
+            play(guild, serverQueue.songs[0]);
+        };
+    
+        const errorListener = error => {
+            console.error('Audio Player Error:', error);
+            if (retries > 0) {
+                console.log(`Retrying... Attempts left: ${retries}`);
+                serverQueue.textChannel.send(`${messages.retryLeft} ${retries}`);
+                play(guild, song, retries - 1);
+            } else {
+                if (serverQueue.songs.length === 1){return serverQueue.textChannel.send(messages.retryEnd);}
+                serverQueue.songs.shift();
+                play(guild, serverQueue.songs[0]);
+            }
+        };
+    
+        // Remove previous listeners to avoid memory leaks
+        serverQueue.player.removeAllListeners(AudioPlayerStatus.Idle);
+        serverQueue.player.removeAllListeners('error');
+    
+        // Add the new listeners
+        serverQueue.player.on(AudioPlayerStatus.Idle, idleListener);
+        serverQueue.player.on('error', errorListener);
+
+    } catch (error) {
+        console.error('Error playing song:', error);
+        if (retries > 0) {
+            console.log(`Retrying... Attempts left: ${retries}`);
+            serverQueue.textChannel.send(`${messages.retryLeft} ${retries}`);
+            play(guild, song, retries - 1);
+        } else {
+            if (serverQueue.songs.length === 1){return serverQueue.textChannel.send(messages.retryEnd);}
+            serverQueue.songs.shift();
+            play(guild, serverQueue.songs[0]);
         }
-        play(guild, serverQueue.songs[0]);
-    };
-
-    const errorListener = error => {
-        console.error('Audio Player Error:', error);
-        serverQueue.songs.shift();
-        play(guild, serverQueue.songs[0]);
-    };
-
-    // Remove previous listeners to avoid memory leaks
-    serverQueue.player.removeAllListeners(AudioPlayerStatus.Idle);
-    serverQueue.player.removeAllListeners('error');
-
-    // Add the new listeners
-    serverQueue.player.on(AudioPlayerStatus.Idle, idleListener);
-    serverQueue.player.on('error', errorListener);
+    }
 }
 
 async function skip(message, serverQueue) {
@@ -393,13 +414,6 @@ const displayQueue = (message, serverQueue) => {
 
     if (serverQueue.songs.length > maxDisplay) {
         queueMessage += `... ${serverQueue.songs.length - maxDisplay} ${messages.leftInQueue}`;
-    }
-
-    // Split the queueMessage into chunks of 2000 characters
-    const chunkSize = 2000;
-    for (let i = 0; i < queueMessage.length; i += chunkSize) {
-        const chunk = queueMessage.substring(i, i + chunkSize);
-        message.channel.send(chunk);
     }
 };
 

@@ -28,8 +28,8 @@
     "helpQueue": "Type >queue to see the current queue",
     "helpAutoplay": "Type >autoplay toggle autoplay for related songs",
     "helpHelp": "Type >help to see this message",
-    "noManageMessagesPermission": "I don't have permission to manage messages!",
     "autoEnabled": "Autoplay is Enabled",
     "autoDisabled": "Autoplay is Disabled",
-    "deleteError": "There was an error trying to delete the message!"
+    "retryLeft": "Error encountered, Retrying... Attempts left:",
+    "retryEnd": "No more tries left, ending queue."
 }

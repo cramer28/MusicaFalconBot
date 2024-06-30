@@ -6,7 +6,7 @@
     "searchNoResults": "No se encontraron resultados.",
     "searchInitialResponse": "Elije una cancion ingresando el numero correspondiente:\n",
     "searchEndingResponse": "Escribe el numero de la cancion que deseas reproducir.",
-    "searchNoSelection": "Tiempo de seleccion agotado, cancelando.",
+    "searchNoSelection": "Tiempo de espera agotado, cancelando.",
     "searchError": "Ocurrio un error buscando la cancion.",
     "addedToQueue": "ha sido añadido a la cola!",
     "multiQueueAdd": "canciones añadidas a la lista!",
@@ -28,8 +28,8 @@
     "helpQueue": ">queue - Muestra la cola de canciones actual",
     "helpAutoplay": ">autoplay activar reproduccion automatica",
     "helpHelp": ">help - Muestra este mensaje de ayuda",
-    "noManageMessagesPermission": "No tengo los permisos para administrar mensajes!",
     "autoEnabled": "Autoplay fue Activado",
     "autoDisabled": "Autoplay fue Desactivado",
-    "deleteError": "Hubo un error intentando borrar el mensaje!"
+    "retryLeft": "Ocurrio un error, reintentando... intentos restantes:",
+    "retryEnd": "No quedan mas intentos, finalizando cola."
 }
