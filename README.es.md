@@ -5,8 +5,8 @@
 Un simple bot de música para Discord que reproduce música desde YouTube.
 
 ## Características
-- Reproduce música desde YouTube
-- Salta la canción actual
+- Reproduce música desde YouTube o Youtube Music
+- Pausa, Salta o Muestra Info sobre la canción actual
 - Detiene la música y borra la cola
 - Muestra la cola actual
 - Mantiene la música sonando con la función de Autoplay
@@ -14,9 +14,11 @@ Un simple bot de música para Discord que reproduce música desde YouTube.
 
 ## Comandos
 - `>play <URL de YouTube> o nombre de cancion` - Reproduce una canción desde YouTube ya sea con un link o eligiendo de una lista de resultados.
+- `>pause` - Pausa/Reanuda la reproducción de música.
 - `>skip` - Salta la canción actual.
 - `>stop` - Detiene la música y borra la cola.
 - `>queue` - Muestra la cola actual.
+- `>info` - Muestra Información sobre la canción actual.
 - `>autoplay` - Activa/Desactiva la funcion de Autoplay para reproducir canciones relacionadas.
 - `>help` - Muestra el mensaje de ayuda.
 

@@ -5,8 +5,8 @@
 A simple Discord music bot that plays music from YouTube.
 
 ## Features
-- Play music from YouTube
-- Skip the current song
+- Play music from YouTube or Youtube Music
+- Pause, Skip or Show Info about the current song
 - Stop the music and clear the queue
 - Show the current queue
 - Autoplay to keep the music going
@@ -14,9 +14,11 @@ A simple Discord music bot that plays music from YouTube.
 
 ## Commands
 - `>play <YouTube URL> or search query` - Play a song from YouTube directly by url or entering a search query.
+- `>pause` - Toggle to Pause/Unpause the current song.
 - `>skip` - Skip the current song.
 - `>stop` - Stop the music and clear the queue.
 - `>queue` - Show the current queue.
+- `>info` - Shows information about the current song.
 - `>autoplay` - Keep playing songs related to the last played.
 - `>help` - Show help message.
 
