@@ -59,13 +59,17 @@ client.on('messageCreate', async message => {
             activeCollectors.delete(message.author.id);
         }
         execute(message, serverQueue, args);
+    } else if (command === 'pause') {
+        togglePause(message, serverQueue);
     } else if (command === 'skip') {
         skip(message, serverQueue);
     } else if (command === 'stop') {
         stop(message, serverQueue);
     } else if (command === 'queue') {
         displayQueue(message, serverQueue);
-    } else if (command === 'help') {
+    } else if (command === 'info') {
+        displayInfo(message);
+    }else if (command === 'help') {
         help(message);
     } else if (command === 'autoplay') {
         toggleAutoplay(message, serverQueue);
@@ -365,6 +369,21 @@ async function play(guild, song, retries = 3) {
     }
 }
 
+async function togglePause(message, serverQueue) {
+    if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelPause);
+    if (!serverQueue) return message.channel.send(messages.noSongToPause);
+
+    if (serverQueue.player.state.status === AudioPlayerStatus.Playing) {
+        serverQueue.player.pause();
+        return serverQueue.textChannel.send(messages.musicPaused);
+    } else if (serverQueue.player.state.status === AudioPlayerStatus.Paused) {
+        serverQueue.player.unpause();
+        return serverQueue.textChannel.send(messages.musicUnpaused);
+    } else {
+        return serverQueue.textChannel.send(messages.musicPausedError + serverQueue.player.state.status);
+    }
+}
+
 async function skip(message, serverQueue) {
     if (!message.member.voice.channel) return message.channel.send(messages.noVoiceChannelSkip);
     if (!serverQueue) return message.channel.send(messages.noSongToSkip);
@@ -399,6 +418,9 @@ async function stop(message, serverQueue) {
     serverQueue.connection.destroy();
     queue.delete(message.guild.id);
     client.user.setActivity('>help', { type: ActivityType.Listening });
+
+    serverQueue.player.removeAllListeners(AudioPlayerStatus.Idle);
+    serverQueue.player.removeAllListeners('error');
 }
 
 const displayQueue = (message, serverQueue) => {
@@ -417,6 +439,26 @@ const displayQueue = (message, serverQueue) => {
     }
 };
 
+async function displayInfo(message) {
+    const serverQueue = queue.get(message.guild.id);
+    if (!serverQueue || !serverQueue.songs.length) {
+        return message.channel.send(messages.noQueue);
+    }
+
+    const currentSong = serverQueue.songs[0];
+
+    let songInfo = await ytdl.getInfo(currentSong.url);
+
+    return message.channel.send(`${messages.infoTitle} ${currentSong.title}\n${messages.infoAuthor} ${songInfo.videoDetails.author.name}\n${messages.infoDuration} ${formatDuration(songInfo.videoDetails.lengthSeconds)}min\n${messages.infoViews} ${songInfo.videoDetails.viewCount}\nURL: ${currentSong.url}`);
+    
+}
+
+function formatDuration(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+}
+
 async function help(message) {
     const helpMessage = `
 ${messages.helpPlay}
@@ -432,7 +474,7 @@ ${messages.helpHelp}
 function toggleAutoplay(message, serverQueue) {
     if (!serverQueue) return message.channel.send(messages.noQueue);
     serverQueue.autoplay = !serverQueue.autoplay;
-    message.channel.send(serverQueue.autoplay ? messages.autoEnabled : messages.autoDisabled);
+    return message.channel.send(serverQueue.autoplay ? messages.autoEnabled : messages.autoDisabled);
 }
 
 //#endregion
